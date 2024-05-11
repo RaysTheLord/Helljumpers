@@ -1,0 +1,696 @@
+0 spawn {   
+   
+        _kosher_areas = [area_marker];   
+         _elite_units = ["WBK_EliteMainWeap_3", "WBK_EliteMainWeap_2", "WBK_EliteMainWeap_6", "IMS_Elite_Melee_1"];       
+   
+         _jackal_units = ["OPTRE_Jackal_Major_F", "OPTRE_Jackal_F", "OPTRE_Jackal_Infantry_F", "OPTRE_Jackal_Major2_F", "OPTRE_Jackal_Marksman_F", "OPTRE_Jackal_Sharpshooter_F", "OPTRE_Jackal_Sniper_F"];       
+   
+         _grunt_units = ["WBK_Grunt_2", "WBK_Grunt_1", "WBK_Grunt_5", "WBK_Grunt_3"];       
+   
+        _sleep_time = 0.1;   
+        _has_radio = 1; 
+        _enableGroupReinforce = 1; 
+         
+        for "_l" from 1 to 10 do {   
+            private _position =  [[selectRandom _kosher_areas ], ["water"], {        
+                            {_x distance _this > 100} count allPlayers > 0 && !(_this isFlatEmpty [1, -1, -1, -1, 0, false,  objNull] isEqualTo []);   
+            }] call BIS_fnc_randomPos;        
+              
+             if (_position isEqualTo [0, 0]) then {   
+                continue;   
+             };   
+             _grp_elites = createGroup east;     
+             _grp_jackals = createGroup east;       
+             _grp_grunts = createGroup east;       
+ 
+             for "_i" from 1 to random [1, 2, 4] do {        
+              _unit = _grp_elites createUnit [selectRandom _elite_units, [_position select 0, _position select 1, 0], [], 0, "NONE"]; 
+               [[_unit], _has_radio] execVM "\z\lambs\addons\danger\functions\ZEN\fnc_setHasRadio.sqf"; 
+              sleep _sleep_time;   
+             };       
+ 
+             for "_j" from 1 to 2 do {        
+              _unit = _grp_jackals createUnit [selectRandom _jackal_units, [_position select 0, _position select 1, 0], [], 0, "NONE"]; 
+               [[_unit], _has_radio] execVM "\z\lambs\addons\danger\functions\ZEN\fnc_setHasRadio.sqf"; 
+              sleep _sleep_time;   
+             };       
+ 
+             for "_k" from 1 to random[4, 6, 7] do {        
+               _unit = _grp_grunts createUnit [selectRandom _grunt_units, [_position select 0, _position select 1, 0], [], 0, "NONE"];    
+               [[_unit], _has_radio] execVM "\z\lambs\addons\danger\functions\ZEN\fnc_setHasRadio.sqf"; 
+ 
+               sleep _sleep_time;   
+             };      
+ 
+             { 
+                _x enableDynamicSimulation true;  
+                [units _x, _enableGroupReinforce] execVM "\z\lambs\addons\danger\functions\ZEN\fnc_setReinforcement.sqf"; 
+                _wp = _x addWaypoint [getPos leader _x, 0];  
+                _wp setWaypointType "SCRIPTED";  
+                _wp setWaypointScript "\z\lambs\addons\wp\scripts\fnc_wpPatrol.sqf";  
+             } forEach [_grp_elites, _grp_jackals, _grp_grunts]; 
+           
+        };       
+};   
+ 
+_number_tasks = 3; 
+_task_types = ["rescue_civ", "kill_hvt", "bomb", "comms", "forerunner"]; 
+for "_i" from 1 to _number_tasks do { 
+    _task_cur = selectRandom _task_types; 
+    if (_task_cur isEqualTo "rescue_civ") then { 
+        _i spawn { 
+            _center = getPos area_marker;  
+            _radius = 5000;  
+ 
+            _unit_num = 6;  
+ 
+            _restricted_types = []; 
+ 
+            _restricted_markers = [];  
+ 
+            private _buildings = nearestObjects [_center, ["house"], _radius] select {  
+              [_x, _unit_num] call BIS_fnc_isBuildingEnterable and {not (typeof _x in _restricted_types)}};  
+ 
+            _max_per_building = 12; 
+ 
+            _vip_units = ["OPTRE_UNSC_Navy_Soldier_Olive_Unarmed", "OPTRE_UNSC_Navy_Soldier_Blue_Unarmed", "OPTRE_UNSC_Navy_Soldier_Gray_Unarmed", "OPTRE_UNSC_Navy_Soldier_White_Unarmed", "OPTRE_UNSC_Navy_Soldier_Red_Unarmed", "OPTRE_UNSC_Navy_Officer_Dress", "OPTRE_ONI_Researcher", "OPTRE_UNSC_ONI_Soldier_Naval_Unarmed"]; 
+ 
+            _kosher_units_n = ["OPTRE_Jackal_SpecOps_F", "OPTRE_Jackal_SpecOps2_F",  "OPTRE_Jackal_SpecOps3_F",  "OPTRE_Jackal_Sniper_F", "OPTRE_Jackal_Sharpshooter_F", "OPTRE_Jackal_Major2_F", "OPTRE_FC_Elite_SpecOps", "OPTRE_FC_Elite_SpecOps2",   
+            "OPTRE_FC_Elite_SpecOps4"];  
+ 
+            _kosher_units_r = ["IMS_Elite_Melee_1", "IMS_Elite_Melee_2", "OPTRE_FC_Elite_Major", "OPTRE_FC_Elite_Ultra", "OPTRE_FC_Elite_Ultra3"];  
+            _rare_unit_chance = 20;  
+ 
+            _spawnable_buildings = ["Land_ArmoryA_Green", "Land_ArmoryA_Red", "Land_ModularOutPostBuildingEmpty", "Land_ModularOutPostBuildingQuaters", "Land_Radar_01_antenna_base_F", "Land_Radar_01_HQ_F", "Land_Radar_01_kitchen_F", "Land_Research_HQ_F"];
+            
+            
+            _grp_elites = createGroup east;
+            _grp_jackals = createGroup east; 
+            _house = objNull; 
+            if (count _buildings <= 0) then {
+                private _newhousepos = [getPos area_marker, 0, 5000, 10, 0, 1, 0] call BIS_fnc_findSafePos;
+                _house = createVehicle [selectRandom _spawnable_buildings, _newhousepos, [], 0, "NONE"];
+            } else {
+                while {(count _buildings) > 0 && isNull _house} do { 
+                    _house = selectRandom _buildings;   
+                    _buildings deleteAt (_buildings find _house); 
+                    { 
+                        if(_house inArea _x) then { 
+                            _house = objNull; 
+                        }; 
+                    } forEach _restricted_markers; 
+                };
+            };
+
+            _house = _house buildingPos -1;  
+            _house = _house call BIS_fnc_arrayShuffle;   
+
+            _mx_units = _max_per_building min ((count _house) - 1);  
+            for "_k" from 1 to floor(random [5, (5 + _mx_units)/2, _mx_units]) do { 
+                _unitc = selectRandom _kosher_units_n;
+                if (100 - (random 100) <= _rare_unit_chance) then { 
+                    _unitc = selectRandom _kosher_units_r;
+                } else {  
+                    _unitc = selectRandom _kosher_units_n;  
+                };  
+                if (["Jackal", _unitc] call BIS_fnc_inString) then {
+                    _grp_jackals createUnit [_unitc, [0, 0, 0], [], 0, "NONE"];  
+                } else {
+                    _grp_elites createUnit [_unitc, [0, 0, 0], [], 0, "NONE"];  
+                };
+
+            };   
+            _grp_jackals enableDynamicSimulation true;  
+            _grp_elites enableDynamicSimulation true;   
+
+            _units = (units _grp_jackals) + (units _grp_elites);   
+            if (count _units > count _house) then {_units resize (count _house);};  
+            {  
+                _x disableAI "PATH";  
+                _x setUnitPos selectRandom ["UP","UP","MIDDLE"];  
+                _x setPos (_house select _forEachIndex);  
+                _x addEventHandler["Fired",{params ["_unit"];_unit enableAI "PATH";_unit setUnitPos "AUTO";_unit removeEventHandler ["Fired",_thisEventHandler];}];  
+                _x triggerDynamicSimulation false; 
+            } foreach _units;    
+
+            _grp_vip = createGroup west; 
+            _grp_vip createUnit [selectRandom _vip_units, [0, 0, 0], [], 0, "NONE"];  
+            _grp_vip enableDynamicSimulation true;  
+
+            _vip = units _grp_vip select 0; 
+            _vip setPos (_house select (count _units)); 
+            _vip setCaptive true; 
+
+            _vip_task_name = "vip_task_" + str _this; 
+            _vip setVariable ["vip_task", _vip_task_name]; 
+            _vip setVariable ["freed", false]; 
+            [west, _vip_task_name, ["Rescue the hostage from Covenant forces.", "Rescue VIP", "marker"], getPos _vip, "ASSIGNED", 2, false, "HELP", false] call BIS_fnc_taskCreate;   
+
+
+            _vip switchMove "AmovPercMstpSsurWnonDnon"; 
+            _vip disableAI "ANIM"; 
+            _vip triggerDynamicSimulation false; 
+            _vip addEventHandler ["Killed", { 
+                params ["_unit", "_killer", "_instigator", "_useEffects"]; 
+                if (!( _unit getVariable "freed")) then { [_unit getVariable "vip_task", "FAILED"] call BIS_fnc_taskSetState; }; 
+                removeAllActions _unit; 
+            }]; 
+            
+            [_vip, ["Free Hostage", { 
+
+                params ["_target", "_caller", "_actionId", "_arguments"]; 
+
+                _target removeAction _actionId; 
+
+                _target switchMove ""; 
+                _target enableAI "ANIM"; 
+                _target setCaptive false; 
+
+                [_target getVariable "vip_task", "SUCCEEDED"] call BIS_fnc_taskSetState; 
+                _target setVariable ["freed", true]; 
+                _wp = (group _target) addWaypoint [[[area_marker], ["water"]] call BIS_fnc_randomPos, 0]; 
+                _wp setWaypointType "SCRIPTED"; 
+                _wp setWaypointScript "\z\lambs\addons\wp\scripts\fnc_wpRetreat.sqf"; 
+
+                [_target] spawn { sleep 30; deleteVehicle (_this select 0)}; 
+            }, nil, 1.5, true, true, "", "true", 3, false, "", ""]] remoteExec ["addAction",0,true];
+        }; 
+    }; 
+    if (_task_cur isEqualTo "kill_hvt") then { 
+        _i spawn { 
+            _center = getPos area_marker;  
+            _radius = 5000;  
+ 
+            _unit_num = 6;  
+ 
+            _restricted_types = []; 
+ 
+            _restricted_markers = [];  
+ 
+            private _buildings = nearestObjects [_center, ["house"], _radius] select {  
+              [_x, _unit_num] call BIS_fnc_isBuildingEnterable and {not (typeof _x in _restricted_types)}};  
+ 
+            _max_per_building = 12; 
+ 
+            _vip_units = ["OPTRE_FC_Elite_HonorGuard_Ultra", "WBK_EliteMainWeap_7", "IMS_Elite_Melee_2", "OPTREW_Grunt_Yapyap"]; 
+ 
+            _kosher_units_n = ["OPTRE_Jackal_SpecOps_F", "OPTRE_Jackal_SpecOps2_F",  "OPTRE_Jackal_SpecOps3_F",  "OPTRE_Jackal_Sniper_F", "OPTRE_Jackal_Sharpshooter_F", "OPTRE_Jackal_Major2_F", "OPTRE_FC_Elite_SpecOps", "OPTRE_FC_Elite_SpecOps2",  "OPTRE_FC_Elite_SpecOps4"];  
+ 
+            _kosher_units_r = ["IMS_Elite_Melee_1", "IMS_Elite_Melee_2", "OPTRE_FC_Elite_Major", "OPTRE_FC_Elite_Ultra", "OPTRE_FC_Elite_Ultra3"];  
+            _rare_unit_chance = 5;
+            
+            _spawnable_buildings = ["Land_ArmoryA_Green", "Land_ArmoryA_Red", "Land_ModularOutPostBuildingEmpty", "Land_ModularOutPostBuildingQuaters", "Land_Radar_01_antenna_base_F", "Land_Radar_01_HQ_F", "Land_Radar_01_kitchen_F", "Land_Research_HQ_F"];
+
+ 
+            _grp_elites = createGroup east;
+            _grp_jackals = createGroup east; 
+
+            _house = objNull; 
+            if (count _buildings <= 0) then {
+                private _newhousepos = [getPos area_marker, 0, 5000, 10, 0, 1, 0] call BIS_fnc_findSafePos;
+                _house = createVehicle [selectRandom _spawnable_buildings, _newhousepos, [], 0, "NONE"];
+            } else {
+                while {(count _buildings) > 0 && isNull _house} do { 
+                    _house = selectRandom _buildings;   
+                    _buildings deleteAt (_buildings find _house); 
+                    { 
+                        if(_house inArea _x) then { 
+                            _house = objNull; 
+                        }; 
+                    } forEach _restricted_markers; 
+                };
+            };
+
+            _house = _house buildingPos -1;  
+            _house = _house call BIS_fnc_arrayShuffle;   
+
+            _mx_units = _max_per_building min ((count _house) - 1);  
+            for "_k" from 1 to floor(random [5, (5 + _mx_units)/2, _mx_units]) do { 
+                _unitc = selectRandom _kosher_units_n;
+                if (100 - (random 100) <= _rare_unit_chance) then { 
+                    _unitc = selectRandom _kosher_units_r;
+                } else {  
+                    _unitc = selectRandom _kosher_units_n;  
+                };  
+                if (["Jackal", _unitc] call BIS_fnc_inString) then {
+                    _grp_jackals createUnit [_unitc, [0, 0, 0], [], 0, "NONE"];  
+                } else {
+                    _grp_elites createUnit [_unitc, [0, 0, 0], [], 0, "NONE"];  
+                };
+
+            };   
+            _grp_jackals enableDynamicSimulation true;  
+            _grp_elites enableDynamicSimulation true;   
+
+            _units = (units _grp_jackals) + (units _grp_elites);   
+            if (count _units > count _house) then {_units resize (count _house);};  
+            {  
+                _x disableAI "PATH";  
+                _x setUnitPos selectRandom ["UP","UP","MIDDLE"];  
+                _x setPos (_house select _forEachIndex);  
+                _x addEventHandler["Fired",{params ["_unit"];_unit enableAI "PATH";_unit setUnitPos "AUTO";_unit removeEventHandler ["Fired",_thisEventHandler];}];  
+                _x triggerDynamicSimulation false; 
+            } foreach _units;    
+
+            _grp_vip = createGroup east; 
+            _grp_vip createUnit [selectRandom _vip_units, [0, 0, 0], [], 0, "NONE"];  
+            _grp_vip enableDynamicSimulation true;  
+
+            _vip = units _grp_vip select 0; 
+            _vip setPos (_house select (count _units)); 
+
+            _vip disableAI "PATH";  
+            _vip setUnitPos selectRandom ["UP","UP","MIDDLE"];  
+            _vip addEventHandler["Fired",{params ["_unit"];_unit enableAI "PATH";_unit setUnitPos "AUTO";_unit removeEventHandler ["Fired",_thisEventHandler];}];  
+            _vip triggerDynamicSimulation false; 
+
+            _vip_task_name = "vip_task_" + str _this; 
+            _vip setVariable ["vip_task", _vip_task_name]; 
+            [west, _vip_task_name, ["Kill a valuable Covenant target.", "Kill HVT", "marker"], getPos _vip, "ASSIGNED", 2, false, "KILL", false] call BIS_fnc_taskCreate;   
+
+            _vip addEventHandler ["Killed", { 
+                params ["_unit", "_killer", "_instigator", "_useEffects"]; 
+                [_unit getVariable "vip_task", "SUCCEEDED"] call BIS_fnc_taskSetState; 
+            }]; 
+        }; 
+    }; 
+     
+    if (_task_cur isEqualTo "bomb") then { 
+        _i spawn {   
+                _kosher_areas = [area_marker]; 
+                _valid_comps = ["cov_camp_a", "cov_camp_b", "cov_camp_c", "cov_camp_d", "cov_camp_e", "cov_camp_f"]; 
+ 
+                 private _pos = [getPos area_marker, 0, 5000, 10, 0, 1, 0] call BIS_fnc_findSafePos; 
+ 
+                _comp_chosen = selectRandom _valid_comps; 
+                 _compReference = [ _comp_chosen, [_pos select 0, _pos select 1, 0], [0, 0, 0], random [0, 180, 360], true, true, false ] call LARs_fnc_spawnComp; 
+ 
+                _objects_comp = [ _compReference ] call LARs_fnc_getCompObjects; 
+                 
+                _turret_chance = 60; 
+                _indiv_turret_chance = 50; 
+                if (random 100 <= _turret_chance) then { 
+                    { 
+                        if (_x isKindOf "LandVehicle" ) then { 
+                            if (random 100 <= _indiv_turret_chance) then { 
+                                _crw = createVehicleCrew _x; 
+                                _crw enableDynamicSimulation true; 
+                            }; 
+                        }; 
+                    } forEach _objects_comp; 
+                } else { 
+                    { 
+                        if (_x isKindOf "LandVehicle" ) then { 
+                            deleteVehicle _x; 
+                        }; 
+                    } forEach _objects_comp; 
+ 
+                }; 
+ 
+                 _object = "HeavyDropPodClose" createVehicle _pos; 
+                _vip_task_name = "vip_task_" + str _this; 
+                _object setVariable ["vip_task", _vip_task_name]; 
+                 
+                sleep 3; 
+                [west, _vip_task_name, ["Destroy a Covenant weapon's cache.", "Destroy Cache", "marker"], getPos _object, "ASSIGNED", 2, false, "DESTROY", false] call BIS_fnc_taskCreate;   
+ 
+                _object addEventHandler ["Explosion", {  
+                    params ["_vehicle", "_damage", "_source"]; 
+                    if (!(["grenade", str _source, false] call BIS_fnc_inString) && {_x distance _vehicle < 100} count allPlayers > 0) then {  
+                        (getPos _vehicle) spawn { 
+                            _fire = "test_EmptyObjectForFireBig" createVehicle (_this); 
+                            sleep 60; 
+                            deleteVehicle _fire; 
+                        }; 
+                        [_vehicle getVariable "vip_task", "SUCCEEDED"] call BIS_fnc_taskSetState; 
+                        deleteVehicle _vehicle; 
+                    }; 
+                }]; 
+ 
+                 _elite_units = ["WBK_EliteMainWeap_3", "WBK_EliteMainWeap_2", "WBK_EliteMainWeap_6", "IMS_Elite_Melee_1"];       
+                 _jackal_units = ["OPTRE_Jackal_Major_F", "OPTRE_Jackal_F", "OPTRE_Jackal_Infantry_F", "OPTRE_Jackal_Major2_F", "OPTRE_Jackal_Marksman_F", "OPTRE_Jackal_Sharpshooter_F", "OPTRE_Jackal_Sniper_F"];       
+                 _grunt_units = ["WBK_Grunt_2", "WBK_Grunt_1", "WBK_Grunt_5", "WBK_Grunt_3"];       
+ 
+                 _grp_elites = createGroup east;     
+                 _grp_jackals = createGroup east;       
+                 _grp_grunts = createGroup east; 
+                  
+                 _safe_pos_for_units = [_pos, 1, 8, 1, 0, 20, 0] call BIS_fnc_findSafePos; 
+ 
+                 for "_i" from 1 to random [1, 2, 4] do {        
+                  _unit = _grp_elites createUnit [selectRandom _elite_units, [_safe_pos_for_units select 0, _safe_pos_for_units select 1, 0], [], 0, "NONE"]; 
+                 };       
+ 
+                 for "_j" from 1 to 2 do {        
+                  _unit = _grp_jackals createUnit [selectRandom _jackal_units, [_safe_pos_for_units select 0, _safe_pos_for_units select 1, 0], [], 0, "NONE"]; 
+                 };       
+ 
+                 for "_k" from 1 to random[4, 6, 7] do {        
+                   _unit = _grp_grunts createUnit [selectRandom _grunt_units, [_safe_pos_for_units select 0, _safe_pos_for_units select 1, 0], [], 0, "NONE"];    
+                 };      
+ 
+                 { 
+                    _x enableDynamicSimulation true;  
+                    _wp = _x addWaypoint [getPos leader _x, 0];  
+                    _wp setWaypointType "SCRIPTED";  
+                    _wp setWaypointScript "\z\lambs\addons\wp\scripts\fnc_wpPatrol.sqf";  
+                 } forEach [_grp_elites, _grp_jackals, _grp_grunts]; 
+ 
+                _restricted_types = []; 
+                _restricted_markers = []; 
+                _max_per_building = 12; 
+ 
+ 
+                private _buildings = nearestObjects [_pos, [], 30] select {  
+                      [_x, 4] call BIS_fnc_isBuildingEnterable and {not (typeof _x in _restricted_types)}}; 
+                                       
+                if (count _buildings > 0) then {  
+                    _kosher_units_n = ["OPTRE_Jackal_SpecOps_F", "OPTRE_Jackal_SpecOps2_F",  "OPTRE_Jackal_SpecOps3_F",  "OPTRE_Jackal_Sniper_F", "OPTRE_Jackal_Sharpshooter_F", "OPTRE_Jackal_Major2_F", "OPTRE_FC_Elite_SpecOps", "OPTRE_FC_Elite_SpecOps2",  "OPTRE_FC_Elite_SpecOps4"];  
+                    _grp_elites = createGroup east;
+                    _grp_jackals = createGroup east;     
+ 
+                    _house = objNull; 
+                    while {(count _buildings) > 0 && isNull _house} do { 
+                        _house = selectRandom _buildings;   
+                        _buildings deleteAt (_buildings find _house); 
+                        { 
+                            if(_house inArea _x) then { 
+                                _house = objNull; 
+                            }; 
+                        } forEach _restricted_markers; 
+                    }; 
+ 
+                    _house = _house buildingPos -1;  
+                    _house = _house call BIS_fnc_arrayShuffle;   
+ 
+                    _mx_units = _max_per_building min ((count _house));  
+                    for "_l" from 1 to floor(random [5, (5 + _mx_units)/2, _mx_units]) do {  
+                        _unit = selectRandom _kosher_units_n;
+                        if (["Jackal", _unit] call BIS_fnc_inString) then {
+                            _grp_jackals createUnit [_unit, [0, 0, 0], [], 0, "NONE"];  
+                        } else {
+                            _grp_elites createUnit [_unit, [0, 0, 0], [], 0, "NONE"];  
+                        };
+                    };  
+
+                    _grp_jackals enableDynamicSimulation true;  
+                    _grp_elites enableDynamicSimulation true;  
+ 
+                    _units = (units _grp_jackals) + (units _grp_elites);   
+                    if (count _units > count _house) then {_units resize (count _house);};  
+                    {  
+                        _x disableAI "PATH";  
+                        _x setUnitPos selectRandom ["UP","UP","MIDDLE"];  
+                        _x setPos (_house select _forEachIndex);  
+                        _x addEventHandler["Fired",{params ["_unit"];_unit enableAI "PATH";_unit setUnitPos "AUTO";_unit removeEventHandler ["Fired",_thisEventHandler];}];  
+                        _x triggerDynamicSimulation false; 
+                    } foreach _units;    
+                }; 
+        };   
+ 
+ 
+    }; 
+     
+    if (_task_cur isEqualTo "comms") then { 
+        _i spawn {   
+                _kosher_areas = [area_marker]; 
+                _valid_comps = ["cov_camp_a", "cov_camp_b", "cov_camp_c", "cov_camp_d", "cov_camp_e", "cov_camp_f"]; 
+ 
+                 private _pos = [getPos area_marker, 0, 5000, 10, 0, 1, 0] call BIS_fnc_findSafePos; 
+ 
+                _comp_chosen = selectRandom _valid_comps; 
+                 _compReference = [ _comp_chosen, [_pos select 0, _pos select 1, 0], [0, 0, 0], random [0, 180, 360], true, true, false ] call LARs_fnc_spawnComp; 
+ 
+                _objects_comp = [ _compReference ] call LARs_fnc_getCompObjects; 
+                 
+                _turret_chance = 60; 
+                _indiv_turret_chance = 50; 
+                if (random 100 <= _turret_chance) then { 
+                    { 
+                        if (_x isKindOf "LandVehicle" ) then { 
+                            if (random 100 <= _indiv_turret_chance) then { 
+                                _crw = createVehicleCrew _x; 
+                                _crw enableDynamicSimulation true; 
+                            }; 
+                        }; 
+                    } forEach _objects_comp; 
+                } else { 
+                    { 
+                        if (_x isKindOf "LandVehicle" ) then { 
+                            deleteVehicle _x; 
+                        }; 
+                    } forEach _objects_comp; 
+ 
+                }; 
+ 
+                 _object = "OPTRE_FC_Cov_Antenna" createVehicle _pos; 
+                _vip_task_name = "vip_task_" + str _this; 
+                _object setVariable ["vip_task", _vip_task_name]; 
+ 
+                sleep 3; 
+                [west, _vip_task_name, ["Disable Covenant communications equipment.", "Disable Comms Antenna", "marker"], getPos _object, "ASSIGNED", 2, false, "INTEL", false] call BIS_fnc_taskCreate;   
+ 
+                [ 
+                    _object, 
+                    "Disable Comms", 
+                    "\a3\ui_f\data\IGUI\Cfg\holdactions\holdAction_hack_ca.paa", 
+                    "\a3\ui_f\data\IGUI\Cfg\holdactions\holdAction_hack_ca.paa", 
+                    "true", 
+                    "true",  
+                    {}, 
+                    {}, 
+                    { 
+                        _obj = _this select 0; 
+                        deleteVehicle _obj; 
+                        [_obj getVariable "vip_task", "SUCCEEDED"] call BIS_fnc_taskSetState; 
+                    }, 
+                    {}, 
+                    [], 
+                    10, 
+                    6, 
+                    true, 
+                    false 
+                ] remoteExec ["BIS_fnc_holdActionAdd", 0, true]; 
+ 
+                 _elite_units = ["WBK_EliteMainWeap_3", "WBK_EliteMainWeap_2", "WBK_EliteMainWeap_6", "IMS_Elite_Melee_1"];       
+                 _jackal_units = ["OPTRE_Jackal_Major_F", "OPTRE_Jackal_F", "OPTRE_Jackal_Infantry_F", "OPTRE_Jackal_Major2_F", "OPTRE_Jackal_Marksman_F", "OPTRE_Jackal_Sharpshooter_F", "OPTRE_Jackal_Sniper_F"];       
+                 _grunt_units = ["WBK_Grunt_2", "WBK_Grunt_1", "WBK_Grunt_5", "WBK_Grunt_3"];       
+ 
+                 _grp_elites = createGroup east;     
+                 _grp_jackals = createGroup east;       
+                 _grp_grunts = createGroup east; 
+ 
+                 _safe_pos_for_units = [_pos, 1, 8, 1, 0, 20, 0] call BIS_fnc_findSafePos; 
+ 
+                 for "_i" from 1 to random [1, 2, 4] do {        
+                  _unit = _grp_elites createUnit [selectRandom _elite_units, [_safe_pos_for_units select 0, _safe_pos_for_units select 1, 0], [], 0, "NONE"]; 
+                 };       
+ 
+                 for "_j" from 1 to 2 do {        
+                  _unit = _grp_jackals createUnit [selectRandom _jackal_units, [_safe_pos_for_units select 0, _safe_pos_for_units select 1, 0], [], 0, "NONE"]; 
+                 };       
+ 
+                 for "_k" from 1 to random[4, 6, 7] do {        
+                   _unit = _grp_grunts createUnit [selectRandom _grunt_units, [_safe_pos_for_units select 0, _safe_pos_for_units select 1, 0], [], 0, "NONE"];    
+                 };      
+ 
+                 { 
+                    _x enableDynamicSimulation true;  
+                    _wp = _x addWaypoint [getPos leader _x, 0];  
+                    _wp setWaypointType "SCRIPTED";  
+                    _wp setWaypointScript "\z\lambs\addons\wp\scripts\fnc_wpPatrol.sqf";  
+                 } forEach [_grp_elites, _grp_jackals, _grp_grunts]; 
+ 
+                _restricted_types = []; 
+                _restricted_markers = []; 
+                _max_per_building = 12; 
+ 
+ 
+                private _buildings = nearestObjects [_pos, [], 30] select {  
+                      [_x, 4] call BIS_fnc_isBuildingEnterable and {not (typeof _x in _restricted_types)}}; 
+ 
+                if (count _buildings > 0) then {  
+                    _kosher_units_n = ["OPTRE_Jackal_SpecOps_F", "OPTRE_Jackal_SpecOps2_F",  "OPTRE_Jackal_SpecOps3_F",  "OPTRE_Jackal_Sniper_F", "OPTRE_Jackal_Sharpshooter_F", "OPTRE_Jackal_Major2_F", "OPTRE_FC_Elite_SpecOps", "OPTRE_FC_Elite_SpecOps2",  "OPTRE_FC_Elite_SpecOps4"];  
+                    _grp_cov = createGroup east;      
+ 
+                    _house = objNull; 
+                    while {(count _buildings) > 0 && isNull _house} do { 
+                        _house = selectRandom _buildings;   
+                        _buildings deleteAt (_buildings find _house); 
+                        { 
+                            if(_house inArea _x) then { 
+                                _house = objNull; 
+                            }; 
+                        } forEach _restricted_markers; 
+                    }; 
+ 
+                    _house = _house buildingPos -1;  
+                    _house = _house call BIS_fnc_arrayShuffle;   
+ 
+                    _mx_units = _max_per_building min ((count _house));  
+                    for "_l" from 1 to floor(random [5, (5 + _mx_units)/2, _mx_units]) do {  
+                        _grp_cov createUnit [selectRandom _kosher_units_n, [0, 0, 0], [], 0, "NONE"];  
+                    };  
+ 
+                    _grp_cov enableDynamicSimulation true;  
+ 
+                    _units = units _grp_cov;   
+                    if (count _units > count _house) then {_units resize (count _house);};  
+                    {  
+                        _x disableAI "PATH";  
+                        _x setUnitPos selectRandom ["UP","UP","MIDDLE"];  
+                        _x setPos (_house select _forEachIndex);  
+                        _x addEventHandler["Fired",{params ["_unit"];_unit enableAI "PATH";_unit setUnitPos "AUTO";_unit removeEventHandler ["Fired",_thisEventHandler];}];  
+                        _x triggerDynamicSimulation false; 
+                    } foreach _units;    
+                }; 
+        };   
+ 
+    }; 
+     
+    if (_task_cur isEqualTo "forerunner") then { 
+        _i spawn {   
+                _kosher_areas = [area_marker]; 
+                _valid_comps = ["cov_camp_a", "cov_camp_b", "cov_camp_c", "cov_camp_d", "cov_camp_e", "cov_camp_f"]; 
+ 
+                 private _pos = [getPos area_marker, 0, 5000, 10, 0, 1, 0] call BIS_fnc_findSafePos; 
+ 
+                _comp_chosen = selectRandom _valid_comps; 
+                 _compReference = [ _comp_chosen, [_pos select 0, _pos select 1, 0], [0, 0, 0], random [0, 180, 360], true, true, false ] call LARs_fnc_spawnComp; 
+ 
+                _objects_comp = [ _compReference ] call LARs_fnc_getCompObjects; 
+                 
+                _turret_chance = 60; 
+                _indiv_turret_chance = 50; 
+                if (random 100 <= _turret_chance) then { 
+                    { 
+                        if (_x isKindOf "LandVehicle" ) then { 
+                            if (random 100 <= _indiv_turret_chance) then { 
+                                _crw = createVehicleCrew _x; 
+                                _crw enableDynamicSimulation true; 
+                            }; 
+                        }; 
+                    } forEach _objects_comp; 
+                } else { 
+                    { 
+                        if (_x isKindOf "LandVehicle" ) then { 
+                            deleteVehicle _x; 
+                        }; 
+                    } forEach _objects_comp; 
+ 
+                }; 
+                 
+                 _object = selectRandom ["OPTRE_FR_Silex_Unggoy", "Land_OPTRE_FR_Console_1", "Land_OPTRE_FR_Console_2", "OPTRE_FR_Silex_Human", "OPTRE_FR_Silex_Kigyar", "OPTRE_FR_Silex_Sangheyli"] createVehicle _pos; 
+                 _object allowDamage false; 
+                _vip_task_name = "vip_task_" + str _this; 
+                _object setVariable ["vip_task", _vip_task_name]; 
+ 
+                sleep 0.5; 
+                [west, _vip_task_name, ["Collect data on the Forerunner artifacts.", "Forerunner Technology", "marker"], getPos _object, "ASSIGNED", 2, false, "SEARCH", false] call BIS_fnc_taskCreate;   
+ 
+                [ 
+                    _object, 
+                    "Collect Data", 
+                    "\a3\ui_f\data\IGUI\Cfg\holdactions\holdAction_search_ca.paa", 
+                    "\a3\ui_f\data\IGUI\Cfg\holdactions\holdAction_search_ca.paa", 
+                    "true", 
+                    "true",  
+                    {}, 
+                    {}, 
+                    { 
+                        _obj = _this select 0; 
+                        [_obj getVariable "vip_task", "SUCCEEDED"] call BIS_fnc_taskSetState; 
+                    }, 
+                    {}, 
+                    [], 
+                    10, 
+                    6, 
+                    true, 
+                    false 
+                ] remoteExec ["BIS_fnc_holdActionAdd", 0, true]; 
+ 
+                 _elite_units = [ "OPTRE_FC_Elite_SpecOps", "OPTRE_FC_Elite_SpecOps2",  "OPTRE_FC_Elite_SpecOps4"];       
+                 _jackal_units = ["OPTRE_Jackal_SpecOps_F", "OPTRE_Jackal_SpecOps2_F",  "OPTRE_Jackal_SpecOps3_F",  "OPTRE_Jackal_Sniper_F", "OPTRE_Jackal_Sharpshooter_F", "OPTRE_Jackal_Major2_F"];  
+                 _grunt_units = ["WBK_Grunt_2", "WBK_Grunt_4", "WBK_Grunt_3"];       
+ 
+                 _grp_elites = createGroup east;     
+                 _grp_jackals = createGroup east;       
+                 _grp_grunts = createGroup east; 
+ 
+                 _safe_pos_for_units = [_pos, 1, 8, 1, 0, 20, 0] call BIS_fnc_findSafePos; 
+ 
+                 for "_i" from 1 to random [1, 2, 4] do {        
+                  _unit = _grp_elites createUnit [selectRandom _elite_units, [_safe_pos_for_units select 0, _safe_pos_for_units select 1, 0], [], 0, "NONE"]; 
+                 };       
+ 
+                 for "_j" from 1 to 2 do {        
+                  _unit = _grp_jackals createUnit [selectRandom _jackal_units, [_safe_pos_for_units select 0, _safe_pos_for_units select 1, 0], [], 0, "NONE"]; 
+                 };       
+ 
+                 for "_k" from 1 to random[4, 6, 7] do {        
+                   _unit = _grp_grunts createUnit [selectRandom _grunt_units, [_safe_pos_for_units select 0, _safe_pos_for_units select 1, 0], [], 0, "NONE"];    
+                 };      
+ 
+                 { 
+                    _x enableDynamicSimulation true;  
+                    _wp = _x addWaypoint [getPos leader _x, 0];  
+                    _wp setWaypointType "SCRIPTED";  
+                    _wp setWaypointScript "\z\lambs\addons\wp\scripts\fnc_wpPatrol.sqf";  
+                 } forEach [_grp_elites, _grp_jackals, _grp_grunts]; 
+ 
+                _restricted_types = []; 
+                _restricted_markers = []; 
+                _max_per_building = 12; 
+ 
+ 
+                private _buildings = nearestObjects [_pos, [], 30] select {  
+                      [_x, 4] call BIS_fnc_isBuildingEnterable and {not (typeof _x in _restricted_types)}}; 
+ 
+                if (count _buildings > 0) then {  
+                    _kosher_units_n = ["OPTRE_Jackal_SpecOps_F", "OPTRE_Jackal_SpecOps2_F",  "OPTRE_Jackal_SpecOps3_F",  "OPTRE_Jackal_Sniper_F", "OPTRE_Jackal_Sharpshooter_F", "OPTRE_Jackal_Major2_F", "OPTRE_FC_Elite_SpecOps", "OPTRE_FC_Elite_SpecOps2",  "OPTRE_FC_Elite_SpecOps4"];
+                    _grp_elites = createGroup east;
+                    _grp_jackals = createGroup east;
+ 
+                    _house = objNull; 
+                    while {(count _buildings) > 0 && isNull _house} do { 
+                        _house = selectRandom _buildings;   
+                        _buildings deleteAt (_buildings find _house); 
+                        { 
+                            if(_house inArea _x) then { 
+                                _house = objNull; 
+                            }; 
+                        } forEach _restricted_markers; 
+                    }; 
+ 
+                    _house = _house buildingPos -1;  
+                    _house = _house call BIS_fnc_arrayShuffle;   
+ 
+                    _mx_units = _max_per_building min ((count _house));  
+                    for "_l" from 1 to floor(random [5, (5 + _mx_units)/2, _mx_units]) do {
+                        _unit = selectRandom _kosher_units_n;
+                        if (["Jackal", _unit] call BIS_fnc_inString) then {
+                            _grp_jackals createUnit [_unit, [0, 0, 0], [], 0, "NONE"];  
+                        } else {
+                            _grp_elites createUnit [_unit, [0, 0, 0], [], 0, "NONE"];  
+                        };
+                    };  
+ 
+                    _grp_jackals enableDynamicSimulation true;  
+                    _grp_elites enableDynamicSimulation true;  
+ 
+                    _units = (units _grp_jackals) + (units _grp_elites);   
+                    if (count _units > count _house) then {_units resize (count _house);};  
+                    {  
+                        _x disableAI "PATH";  
+                        _x setUnitPos selectRandom ["UP","UP","MIDDLE"];  
+                        _x setPos (_house select _forEachIndex);  
+                        _x addEventHandler["Fired",{params ["_unit"];_unit enableAI "PATH";_unit setUnitPos "AUTO";_unit removeEventHandler ["Fired",_thisEventHandler];}];  
+                        _x triggerDynamicSimulation false; 
+                    } foreach _units;    
+                }; 
+        };   
+ 
+    }; 
+ 
+ 
+}; 

@@ -1,0 +1,18 @@
+0 spawn {
+    _plane_classes = ["OPTRE_FC_Type26B_Ultra_Banshee", "OPTRE_FC_Type26N_Banshee", "OPTRE_FC_Type26B_Banshee"];
+    _min_clean_dist = ((dynamicSimulationDistance "Group") * (dynamicSimulationDistanceCoef "IsMoving")) * 3;
+    while { true } do {
+        {
+            if(!(dynamicSimulationEnabled (group _x)) && ((([allPlayers, _x] call Bis_fnc_nearestPosition) distance2D _x) > _min_clean_dist)) then {
+                if (!(typeOf (vehicle _x) in _plane_classes)) then {
+                    if (vehicle _x != _x) then {
+                        deleteVehicle vehicle _x;
+                    };
+                    deleteVehicle _x;
+                
+                };
+            };
+        } forEach units opfor;
+        sleep 60;
+    };
+};
