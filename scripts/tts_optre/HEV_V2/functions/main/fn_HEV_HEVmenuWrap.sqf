@@ -30,15 +30,17 @@ if ((_console getVariable ["OPTRE_PodsLaunchIn",-1]) == 0) then {
 	{
 		_driver = gunner _x;
 		if !(isNull _driver AND !alive _driver) then {
-			_units pushBack _driver; 
-            ["", "BLACK OUT", 1, false] remoteExec ["cutText", _driver, false];
+			_units pushBack _driver;
+            [0, "BLACK", 1, 0] remoteExec ["BIS_fnc_fadeEffect", _x, false];
 		};
 	} forEach (_console getVariable ["OPTRE_PodsLinkedToConsole",[]]);
 
 	sleep 2; 
 		
 	{
+        
 		[_x,[10,10,10000]] remoteExec ["setPos", _x, false];
+        [1, "BLACK", 3, 0] remoteExec ["BIS_fnc_fadeEffect", _x, false];
 	} forEach _units;
 		
 	sleep .5;

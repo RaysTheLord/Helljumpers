@@ -34,7 +34,7 @@ waitUntil {time > 0};
 _allHEVs = switch _shipDeployment do {
 	case "Frigate Lowering Arm": {
 		_pos = [_pos, 100, _DirOfShip] call BIS_fnc_relPos;
-		_frigate = createVehicle ["OPTRE_Frigate_Final_Dawn", [(_pos select 0), (_pos select 1), _startHeight], [], 0, "none"];
+		_frigate = createVehicle ["OPTRE_Frigate_UNSC", [(_pos select 0), (_pos select 1), _startHeight], [], 0, "none"];
 		_frigate setDir _DirOfShip;
 		([_frigate,_units] call OPTRE_Fnc_SpawnHEVsFrigate);
 	};
@@ -60,7 +60,6 @@ _objectsToAlwaysBeDeleted = [_allHEVs,5,[]] call BIS_fnc_param;
 sleep 5;
 {	
     _x setVariable ["HEV_hasPilot", true, true];
-	detach _x; // Start the drop!
     [_x, _pos, false] remoteExec ["tts_fnc_HEV_launchHevPos", 2, false];	
 } forEach _hevArray; 
 
@@ -68,7 +67,7 @@ sleep 5;
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////// Clean Up //////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+sleep 30;
 if (!isNil "_frigate" AND _deleteFrigate) then {{deleteVehicle _x;} forEach [_frigate];};
 {deleteVehicle _x;} forEach _objectsToAlwaysBeDeleted; 
 [_hevArray,_deleteHEVsAfter] remoteExec ["OPTRE_fnc_HEVCleanUp", 2, false];

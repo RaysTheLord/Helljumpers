@@ -7,6 +7,7 @@ _landingEffects = true;
 
 _CHUTE_HEIGHT = 500;
 
+
 _hasPilot = _HEV getVariable "HEV_hasPilot";
 if (_hasPilot && isPlayer (gunner _HEV)) then {
     [] remoteExec ["tts_fnc_HEV_launchEffects", gunner _HEV];
@@ -16,10 +17,11 @@ sleep 1;
 
 if (_use_transition && (_hasPilot && isPlayer (gunner _HEV))) then {
     [] remoteExec ["tts_fnc_HEV_transitionFade", gunner _HEV];
+    sleep 2;
+    [1, "BLACK", 4, 0] remoteExec ["BIS_fnc_fadeEffect", _x, false];
 };
 
 sleep 1;
-
 _displaceHeading = round (random 360);
 _displaceDistance = round (random _radius);
 
@@ -27,17 +29,23 @@ _insertionPos = ([_drop_pos select 0, _drop_pos select 1, 0]) getPos [_displaceD
 _insertionX = _insertionPos select 0;
 _insertionY = _insertionPos select 1;
 
+
 detach _HEV;
 _HEV setVariable ["HEV_isLanded", false, true];
 
-if (_hasPilot) then {
-    [_HEV] remoteExec ["tts_fnc_HEV_doorAction", gunner _HEV];
+//Force eject if stuck for too long
+_HEV spawn {
+    sleep 90;    
+    if (isPlayer (gunner _this)) then {
+        [_this, 0, true] spawn OPTRE_Fnc_HEVDoor;
+    };
 };
 
-_direction = round (random 360);
-_HEV setDir _direction;
-
-_HEV setPosATL [_insertionX, _insertionY, _startHeight];
+if (!_use_transition) then {
+    _direction = round (random 360);
+    _HEV setDir _direction;
+    _HEV setPosATL [_insertionX, _insertionY, _startHeight];    
+};
 _HEV setVelocity [0, 0, -15];
 
 //Until the chute deploys, max speed of 100ms
@@ -59,7 +67,8 @@ _HEV setVelocity [0, 0, -15];
 
 [_HEV] call tts_fnc_HEV_handleLaunchBooster;
 
-waitUntil {((getPosATL _HEV) select 2) < (_startHeight * 0.75)};
+_future = time + 20;
+waitUntil {((getPosATL _HEV) select 2) < (_startHeight * 0.75) || time >= _future};
 
 if (_hasPilot && isPlayer (gunner _HEV)) then {
     [_HEV, _startHeight] remoteExec ["tts_fnc_HEV_reentryEffects", gunner _HEV];
@@ -67,12 +76,13 @@ if (_hasPilot && isPlayer (gunner _HEV)) then {
 
 [_HEV, _startHeight] call tts_fnc_HEV_handleReentryFire;
 
-waitUntil {((getPosATL _HEV) select 2) < _CHUTE_HEIGHT};
+_future = time + 15;
+waitUntil {((getPosATL _HEV) select 2) < _CHUTE_HEIGHT || time >= _future};
 
 [_HEV] call tts_fnc_HEV_handleChute;
 
-_future = time + 15;
-waitUntil {isTouchingGround _HEV && (getPosATL _HEV select 2) < 2.5 || (getPosASL _HEV) select 2 < 1 || time >= _future};
+_future = time + 10;
+waitUntil {(isTouchingGround _HEV && (getPosATL _HEV select 2) < 2.5) || (getPosASL _HEV) select 2 < 1 || time >= _future};
 
 _pos = getPos _HEV;
 
@@ -100,3 +110,7 @@ if (_hasPilot && isPlayer (gunner _HEV)) then {
     [_HEV] remoteExec ["tts_fnc_HEV_crashEffects", gunner _HEV];
     [gunner _HEV, true] remoteExec ["allowDamage", gunner _HEV, false]
 };
+
+[_HEV] remoteExec ["tts_fnc_HEV_doorAction", gunner _HEV];
+
+
