@@ -9,7 +9,7 @@ if (!alive liftoff_console) then {
         _drop_pos = getPos ([(allPlayers - [_playerUnit]) select {alive _x}, _playerUnit] call Bis_fnc_nearestPosition);
     };
     _HEV = createVehicle ["OPTRE_HEV", [0, 0, 6000], [], 0, "FLY"];
-    _newUnit moveInGunner _HEV; 
+    [_newUnit, _HEV] remoteExec ["moveInGunner", 0, false]; 
     [_HEV, "LOCKED"] remoteExec ["setVehicleLock", _HEV];
     _HEV setVariable ["HEV_hasPilot", true, true];
 

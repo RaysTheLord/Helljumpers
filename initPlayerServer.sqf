@@ -7,7 +7,7 @@ if (!alive liftoff_console) then {
     };
     
     _HEV = createVehicle ["OPTRE_HEV", [0, 0, 6000], [], 0, "FLY"];
-    _playerUnit moveInGunner _HEV; 
+    [_playerUnit, _HEV] remoteExec ["moveInGunner", 0, false];
     [_HEV, "LOCKED"] remoteExec ["setVehicleLock", _HEV];
     _HEV setVariable ["HEV_hasPilot", true, true];
     
