@@ -1,55 +1,57 @@
-0 spawn {
-    _min_spawn_dist = (dynamicSimulationDistance "Group") * (dynamicSimulationDistanceCoef "IsMoving");
-    _plyr = selectRandom allPlayers;
-    _extract_pos = [_plyr, 100, 1000, 10, 0, 20, 0, [], [getPos area_marker, getPos area_marker]] call BIS_fnc_findSafePos;
-    
-    _spawnpos = objNull;
-    _iterator = 0;
-    _max_tries = 50;
-    while { (_spawnpos isEqualTo objNull) ||  (([allPlayers, _spawnpos] call Bis_fnc_nearestPosition distance2D _spawnpos) < _min_spawn_dist)} do {
-        _spawnpos = [_extract_pos, _min_spawn_dist, _min_spawn_dist + 1000, 0, 0, 20, 0, [], [getPos area_marker, getPos area_marker]] call BIS_fnc_findSafePos;
-        _iterator = _iterator + 1;
-        if (_iterator > _max_tries) then {
-            _spawnpos = getPos area_marker;
-            break;
-        };
-        sleep 0.1;
-    };
-    
-    
-    
-    [west, "extract_task", ["Get to the Pelican and extract.", "Extract", "marker"], _extract_pos, "ASSIGNED", 2, true, "TAKEOFF", false] call BIS_fnc_taskCreate;   
-
-    _veh = createVehicle ["OPTRE_Pelican_armed_70mm", [_spawnpos select 0, _spawnpos select 1, 50], [], 0, "FLY"];
-    createVehicleCrew _veh;
-    _grp = group driver _veh;
-    
-    _veh allowDamage false;
-    { _x allowDamage false; _x setCaptive true; } forEach units _grp;
-    _veh setVehicleLock "UNLOCKED";
-    
-    _grp setCombatMode "BLUE";   
-    _grp setBehaviour "CARELESS";   
-
-
-    _wp1 = _grp addWaypoint [_extract_pos, 0];
-    _wp1 setWaypointType "MOVE";
-    _wp1 setWaypointStatements ["true", "doStop leader this; (vehicle leader this) land 'LAND'; (vehicle leader this) spawn {sleep 5; _this setFuel 0;}"];
-
-    _wp2 = _grp addWaypoint [_extract_pos, 0];
-    _wp2 setWaypointType "MOVE";
-
-    
-    _wp2 setWaypointStatements ["count (allPlayers select {vehicle _x == (vehicle leader this) || !(lifeState _x isEqualTo 'HEALTHY' || lifeState _x isEqualTo 'INJURED')}) == count allPlayers;", "this setCombatMode 'RED'; this setBehaviour 'COMBAT'; (vehicle leader this) setFuel 1; (units this) doFollow (leader this); (vehicle leader this) spawn { waitUntil { sleep 0.5; !(isTouchingGround _this); }; ['extract_task', 'SUCCEEDED'] call BIS_fnc_taskSetState; sleep 1; ['end1', true] remoteExecCall ['BIS_fnc_endMission'];};"];
-
-    _exit_pos = [nil, [area_marker]] call BIS_fnc_randomPos;
-    _wp3 = _grp addWaypoint [_exit_pos, 0];
-    _wp3 setWaypointType "MOVE";
-
-    _veh addEventHandler ["Killed", {
-        params ["_unit", "_killer", "_instigator", "_useEffects"];
-        ["extract_task", "FAILED"] call BIS_fnc_taskSetState;
-        ["epicFail", false] remoteExecCall ["BIS_fnc_endMission"];
-    }];
-    
+0 spawn {     
+    waitUntil { sleep 10; _tasks = ["vip_task_1", "vip_task_2", "vip_task_3"]; _tasks_complete = []; { if (_x call BIS_fnc_taskCompleted) then { _tasks_complete pushBack _x; };} forEach _tasks; ((count _tasks) - count (_tasks_complete)) == 0  && !alive liftoff_console };   
+    _min_spawn_dist = (dynamicSimulationDistance "Group") * (dynamicSimulationDistanceCoef "IsMoving");     
+    _plyr = selectRandom allPlayers;     
+    _extract_pos = [_plyr, 100, 1000, 10, 0, 20, 0, [], [getPos area_marker, getPos area_marker]] call BIS_fnc_findSafePos;     
+         
+    _spawnpos = objNull;     
+    _iterator = 0;     
+    _max_tries = 50;     
+    while { (_spawnpos isEqualTo objNull) ||  (([allPlayers, _spawnpos] call Bis_fnc_nearestPosition distance2D _spawnpos) < _min_spawn_dist)} do {     
+        _spawnpos = [_extract_pos, _min_spawn_dist, _min_spawn_dist + 1000, 0, 0, 20, 0, [], [getPos area_marker, getPos area_marker]] call BIS_fnc_findSafePos;     
+        _iterator = _iterator + 1;     
+        if (_iterator > _max_tries) then {     
+            _spawnpos = getPos area_marker;     
+            break;     
+        };     
+        sleep 0.1;     
+    };     
+         
+         
+         
+    [west, "extract_task", ["Get to the Pelican and extract.", "Extract", "marker"], _extract_pos, "ASSIGNED", 2, true, "TAKEOFF", false] call BIS_fnc_taskCreate;        
+     
+    _veh = createVehicle ["OPTRE_Pelican_armed_70mm", [_spawnpos select 0, _spawnpos select 1, 50], [], 0, "FLY"];     
+    createVehicleCrew _veh;     
+    _grp = group driver _veh;     
+         
+    _veh allowDamage false;     
+    { _x allowDamage false; _x setCaptive true; } forEach units _grp;     
+    _veh setVehicleLock "UNLOCKED";     
+         
+    _grp setCombatMode "BLUE";        
+    _grp setBehaviour "CARELESS";        
+     
+     
+    _wp1 = _grp addWaypoint [_extract_pos, 0];     
+    _wp1 setWaypointType "MOVE";     
+    _wp1 setWaypointStatements ["true", "doStop leader this; (vehicle leader this) land 'LAND'; (vehicle leader this) spawn {sleep 5; _this setFuel 0;}"];     
+     
+    _wp2 = _grp addWaypoint [_extract_pos, 0];     
+    _wp2 setWaypointType "MOVE";     
+         
+    _wp2 setWaypointStatements ["count (allPlayers select {vehicle _x == (vehicle leader this) || !(lifeState _x isEqualTo 'HEALTHY' || lifeState _x isEqualTo 'INJURED')}) == count allPlayers;", "this setCombatMode 'RED'; this setBehaviour 'COMBAT'; (vehicle leader this) setFuel 1; (units this) doFollow (leader this); (vehicle leader this) spawn { waitUntil { sleep 0.5; !(isTouchingGround _this); }; ['extract_task', 'SUCCEEDED'] call BIS_fnc_taskSetState; sleep 1; ['end1', true] remoteExecCall ['BIS_fnc_endMission'];};"]; 
+     
+    _wp2 setWaypointCompletionRadius 500; 
+     
+    _exit_pos = [nil, [area_marker]] call BIS_fnc_randomPos;     
+    _wp3 = _grp addWaypoint [_exit_pos, 0];     
+    _wp3 setWaypointType "MOVE";     
+     
+    _veh addEventHandler ["Killed", {     
+        params ["_unit", "_killer", "_instigator", "_useEffects"];     
+        ["extract_task", "FAILED"] call BIS_fnc_taskSetState;     
+        ["epicFail", false] remoteExecCall ["BIS_fnc_endMission"];     
+    }];     
+         
 };
