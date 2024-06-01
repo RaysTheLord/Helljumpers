@@ -47,5 +47,7 @@ else {
 	[_HEV, 0, true] spawn OPTRE_Fnc_HEVDoor;
 	[_HEV] remoteExec ["tts_fnc_PE_doorSparks", 0];
 	_HEV setVehicleLock "UNLOCKED";
+    
+    _HEV setVariable ["HEV_isLanded", false, true];
 };
 

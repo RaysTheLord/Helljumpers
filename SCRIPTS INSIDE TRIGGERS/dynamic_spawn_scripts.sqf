@@ -24,14 +24,14 @@
                 _position = [_plyr, _min_spawn_dist, _min_spawn_dist + 250, 1, 0, 20, 0, [], [getPos area_marker, getPos area_marker]] call BIS_fnc_findSafePos; 
                 for "_i" from 1 to (_rem_enemies min (_plyr_cnt * _plyr_cnt_scaling)) do { 
                     _unit = objNull; 
-                    if ((_i mod 4) == 0) then { 
-                        _unit = _grp_elites createUnit [selectRandom _elite_units, [_position select 0, _position select 1, 0], [], 0, "NONE"]; 
+                    if (((_i - 1) mod 7) <= 3) then { 
+                        _unit = _grp_grunts createUnit [selectRandom _grunt_units, [_position select 0, _position select 1, 0], [], 0, "NONE"];    
                     }; 
-                    if ((_i mod 4) == 1) then { 
+                    if (((_i - 1) mod 7) > 3 && ((_i - 1) mod 7) <= 5) then { 
                         _unit = _grp_jackals createUnit [selectRandom _jackal_units, [_position select 0, _position select 1, 0], [], 0, "NONE"]; 
                     }; 
-                    if ((_i mod 4) == 2 || (_i mod 4) == 3) then { 
-                       _unit = _grp_grunts createUnit [selectRandom _grunt_units, [_position select 0, _position select 1, 0], [], 0, "NONE"];    
+                    if (((_i - 1) mod 7) == 6) then {
+                        _unit = _grp_elites createUnit [selectRandom _elite_units, [_position select 0, _position select 1, 0], [], 0, "NONE"];
                     }; 
                      
                     if (!(_unit isEqualTo objNull)) then { 
@@ -159,3 +159,5 @@
          sleep floor(random [ 180, 300, 480 ]);    
     };    
 }; 
+ 
+ 

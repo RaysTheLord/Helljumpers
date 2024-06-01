@@ -21,9 +21,10 @@ _chute animate ["wing1_rotation",0];
 _chute animate ["wing2_rotation",0];
 _chute animate ["wing3_rotation",0];
 _chute animate ["wing4_rotation",0];
-	
+
+_chute_float = time + 15;
 //Slow down due to chute
-while {((getPosATL _HEV) select 2) > 30} do {
+while {((getPosATL _HEV) select 2) > 30 && time < _chute_float} do {
 	if (((velocity _HEV) select 2) < -80) then {
 		_xVel = (velocity _HEV) select 0;
 		_yVel = (velocity _HEV) select 1;
@@ -33,8 +34,8 @@ while {((getPosATL _HEV) select 2) > 30} do {
 		
 	sleep 0.1;
 };
-	
-waitUntil {((getPosATL _HEV) select 2) < 30};
+
+waitUntil {((getPosATL _HEV) select 2) < 30 || time >= _chute_float};
 
 deleteVehicle _chute;
 if (_hasPilot && isPlayer (gunner _HEV)) then {
